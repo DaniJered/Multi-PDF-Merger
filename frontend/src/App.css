@@ -37,6 +37,26 @@ body {
 @media (max-width: 1024px) {
   .app-container {
     grid-template-columns: 1fr;
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .drop-zone {
+    padding: 2rem 1rem;
+  }
+
+  .main-workspace, .sidebar {
+    padding: 1rem;
+  }
+  
+  .page-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
 
