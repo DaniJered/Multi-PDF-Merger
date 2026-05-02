@@ -12,20 +12,20 @@ function App() {
 
   const handleFileUpload = async (event) => {
     const uploadedFiles = Array.from(event.target.files);
-    
+
     for (const file of uploadedFiles) {
       if (file.type !== 'application/pdf') continue;
-      
+
       const fileId = Math.random().toString(36).substring(7);
-      
+
       // Get number of pages
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const numPages = pdf.numPages;
-      
+
       const newFileObj = { id: fileId, file, name: file.name, numPages };
       setFiles(prev => [...prev, newFileObj]);
-      
+
       const newPages = Array.from({ length: numPages }).map((_, i) => ({
         id: `${fileId}-${i}`,
         fileId,
@@ -34,7 +34,7 @@ function App() {
         rotation: 0,
         selected: true
       }));
-      
+
       setPages(prev => [...prev, ...newPages]);
     }
   };
@@ -44,18 +44,18 @@ function App() {
   };
 
   const rotatePage = (pageId) => {
-    setPages(prev => prev.map(p => 
+    setPages(prev => prev.map(p =>
       p.id === pageId ? { ...p, rotation: (p.rotation + 90) % 360 } : p
     ));
   };
 
   const onFileDragEnd = (result) => {
     if (!result.destination) return;
-    
+
     const items = Array.from(files);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-    
+
     setFiles(items);
   };
 
@@ -63,7 +63,7 @@ function App() {
     setIsMerging(true);
     try {
       const formData = new FormData();
-      
+
       // Append unique files used in the sequence
       const sequencePages = [];
       files.forEach(fileObj => {
@@ -71,14 +71,14 @@ function App() {
         sequencePages.push(...filePages);
       });
       const usedFileIds = [...new Set(sequencePages.map(p => p.fileId))];
-      
+
       const fileMapping = {};
       usedFileIds.forEach(fid => {
         const fileObj = files.find(f => f.id === fid);
         formData.append('files', fileObj.file, fileObj.name);
         fileMapping[fid] = fileObj.name;
       });
-      
+
       // Build instructions
       const instructions = {
         global: globalSettings,
@@ -88,16 +88,16 @@ function App() {
           rotation: p.rotation
         }))
       };
-      
+
       formData.append('instructions', JSON.stringify(instructions));
-      
-      const response = await fetch('http://localhost:8000/api/merge', {
+
+      const response = await fetch('https://multi-pdf-backend.onrender.com/api/merge', {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) throw new Error('Merge failed');
-      
+
       const arrayBuffer = await response.arrayBuffer();
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -106,7 +106,7 @@ function App() {
       a.download = 'Merged_Document.pdf';
       a.click();
       window.URL.revokeObjectURL(url);
-      
+
     } catch (error) {
       console.error(error);
       alert('Failed to merge PDFs');
@@ -140,7 +140,7 @@ function App() {
                 <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>{fileObj.name}</h3>
                 <div className="page-grid">
                   {pages.filter(p => p.fileId === fileObj.id).map(page => (
-                    <PageThumbnail 
+                    <PageThumbnail
                       key={page.id}
                       file={page.file}
                       pageIndex={page.pageIndex}
@@ -159,16 +159,16 @@ function App() {
 
       <aside className="sidebar">
         <h2 style={{ marginBottom: '1.5rem' }}>File Order</h2>
-        
+
         {files.length === 0 ? (
           <p className="text-muted">No files uploaded.</p>
         ) : (
           <DragDropContext onDragEnd={onFileDragEnd}>
             <Droppable droppableId="file-board" direction="vertical">
               {(provided) => (
-                <div 
+                <div
                   className="sequence-board"
-                  ref={provided.innerRef} 
+                  ref={provided.innerRef}
                   {...provided.droppableProps}
                   style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}
                 >
@@ -177,11 +177,11 @@ function App() {
                     return (
                       <Draggable key={fileObj.id} draggableId={fileObj.id} index={index}>
                         {(provided) => (
-                          <div 
+                          <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            style={{ 
+                            style={{
                               ...provided.draggableProps.style,
                               background: 'var(--surface-light)',
                               padding: '1rem',
@@ -212,9 +212,9 @@ function App() {
           <h3 style={{ marginBottom: '1rem' }}>Output Settings</h3>
           <div className="settings-group">
             <label>Page Numbers</label>
-            <select 
+            <select
               value={globalSettings.pageNumbers}
-              onChange={(e) => setGlobalSettings(prev => ({...prev, pageNumbers: e.target.value}))}
+              onChange={(e) => setGlobalSettings(prev => ({ ...prev, pageNumbers: e.target.value }))}
             >
               <option value="none">None</option>
               <option value="top-left">Top Left</option>
@@ -227,8 +227,8 @@ function App() {
           </div>
         </div>
 
-        <button 
-          className="btn-primary" 
+        <button
+          className="btn-primary"
           onClick={handleMerge}
           disabled={files.length === 0 || isMerging}
         >
